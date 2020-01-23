@@ -173,6 +173,7 @@ HashMap<KeyT, ValueT>::HashMap():
         vec(new pairVector[DEFAULT_CAPACITY])
 {}
 
+
 template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT>::HashMap(const std::vector<KeyT> &keys,const std::vector<ValueT> &values):
         maxCapacity(DEFAULT_CAPACITY),
@@ -185,7 +186,8 @@ HashMap<KeyT, ValueT>::HashMap(const std::vector<KeyT> &keys,const std::vector<V
     vec = new pairVector[maxCapacity];
     for(int i = 0; i < keys.size(); i++)
     {
-        insert(keys[i], values[i]); //ignore return value because all items come from a hash
+//        insert(keys[i], values[i]);
+        (*this)[keys[i]] = values[i];
     }
 }
 
