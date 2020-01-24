@@ -1,11 +1,33 @@
 #include <boost/tokenizer.hpp>
-#include <boost/filesystem.hpp>
-//#include <string>
+//#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>#
+#include <string>
 #include <iostream>
-//#include <fstream>
+#include <fstream>
 #include "HashMap.hpp"
 
 #define INVALID_INPUT "Invalid input"
+
+
+bool isWholeNumber(const std::string &basicString)
+{
+    if(basicString.length()==0)
+    {
+        return false;
+    }
+    if(basicString.length() > 1 && basicString[0] == '0')
+    {
+        return false;
+    }
+    for(char c:basicString)
+    {
+        if(!isdigit(c))
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 class SpamDetector
 {
@@ -13,32 +35,36 @@ class SpamDetector
 public:
     explicit SpamDetector(std::ifstream &database)
     {
-        _map = new HashMap<std::string, int>();boost::char_separator<char> sep{","};
+        _map = new HashMap<std::string, int>();
+        boost::char_separator<char> sep{","};
         std::string line;
         while(std::getline(database, line))
         {
+            if(line.find_first_of(',') != line.find_last_of(','))
+            {
+                throw std::exception();
+            }
             tokenizer tok{line, sep};
             int counter = 0, weight = 0;
             std::string expression;
-            for (auto current = tok.begin(); current != tok.end(); current++, counter++)
+            auto current = tok.begin();
+            while (current != tok.end())
             {
-                switch (counter)
+                if(counter == 0)
                 {
-                    case 0:
-                    {
-                        expression = *current;
-                        break;
-                    }
-                    case 1:
-                    {
-                        weight = stoi(*current);
-                        break;
-                    }
-                    default:
-                    {
-                        break;
-                    }
+                    expression = *current;
+                    boost::algorithm::to_lower(expression);
                 }
+                else
+                {
+                    if(!isWholeNumber(*current))
+                    {
+                        throw std::exception();
+                    }
+                    weight = stoi(*current);
+                }
+                ++current;
+                counter++;
             }
             if (counter != 2 || expression.empty() || weight < 0)
             {
@@ -57,15 +83,23 @@ public:
         {
             message += line + "\n";
         }
-        for(auto &i: *_map)
+        boost::algorithm::to_lower(message);
+        for(const auto &i: *_map)
         {
-            int index = 0;
-            message.find(i.first);
+            size_t index = message.find(i.first);
             while(index != std::string::npos)
             {
                 score += i.second;
-                index = message.find(i.first, index);
+                index = message.find(i.first, index + 1);
             }
+        }
+        if(score >= threshold)
+        {
+            std::cout << "SPAM" << std::endl;
+        }
+        else
+        {
+            std::cout << "NOT_SPAM" << std::endl;
         }
     }
 
@@ -91,9 +125,10 @@ int main(const int argc, const char **argv)
         std::cerr << INVALID_INPUT << std::endl;
         return EXIT_FAILURE;
     }
-    if (threshold < 1)
+    if (threshold < 1 || !isWholeNumber(argv[3]))
     {
-        throw std::exception();
+        std::cerr << INVALID_INPUT << std::endl;
+        return EXIT_FAILURE;
     }
     std::ifstream databaseFile(argv[1]);
     if (!databaseFile.is_open()) // File doesn't exist

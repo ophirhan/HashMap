@@ -59,13 +59,13 @@ public:
     private:
         int bucket;
         int indexInBucket;
-        pairVector *vec;
-        int capacity;
+        pairVector *ivec;
+        int icapacity;
         pointer current;
 
     public:
         const_iterator(pairVector *mVec, int capacity):
-                bucket(0), indexInBucket(0), capacity(capacity), vec(mVec), current(nullptr)
+                bucket(0), indexInBucket(0), icapacity(capacity), ivec(mVec), current(nullptr)
         {
             if(mVec == nullptr)
             {
@@ -73,33 +73,33 @@ public:
             }
             for (int i = 0; i < capacity; ++i)
             {
-                if(vec[i].size() != 0)
+                if(ivec[i].size() != 0)
                 {
                     bucket = i;
-                    current = &(vec[i][0]);
+                    current = &(ivec[i][0]);
                     return;
                 }
             }
         }
 
-        reference operator*()const
+        reference operator*()
         {
             return *current;
         }
 
-        pointer operator->() const
+        pointer operator->()
         {
             return current;
         }
 
         const_iterator& operator++()
         {
-            if(vec == nullptr)
+            if(ivec == nullptr)
             {
                 current = nullptr;
                 return *this; //todo yair?
             }
-            if(indexInBucket + 1 < (int)vec[bucket].size())
+            if(indexInBucket + 1 < (int)ivec[bucket].size())
             {
                 indexInBucket++;
             }
@@ -107,17 +107,17 @@ public:
             {
                 indexInBucket = 0;
                 bucket++;
-                while(vec[bucket].size() == 0 && bucket < capacity)
+                while(ivec[bucket].size() == 0 && bucket < icapacity)
                 {
                     bucket++;
                 }
-                if(bucket == capacity)
+                if(bucket == icapacity)
                 {
                     current = nullptr;
                     return*this;
                 }
             }
-            current = &(vec[bucket][indexInBucket]);
+            current = &(ivec[bucket][indexInBucket]);
             return *this;
         }
 
@@ -141,7 +141,7 @@ public:
 
     const_iterator begin() const
     {
-        return const_iterator(vec, count);
+        return const_iterator(vec, maxCapacity);
     }
 
     const_iterator end() const
@@ -151,7 +151,7 @@ public:
 
     const_iterator cbegin() const
     {
-        return const_iterator(vec, count);
+        return const_iterator(vec, maxCapacity);
     }
 
     const_iterator cend() const
@@ -318,7 +318,7 @@ template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::erase(const KeyT &key)
 {
     int index = hash(key);
-    for(auto iter=vec[index].begin();iter!= vec[index].end() ; iter++)
+    for(auto iter=vec[index].begin();iter != vec[index].end() ; iter++)
     {
         if(iter->first == key)
         {
