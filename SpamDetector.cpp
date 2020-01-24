@@ -1,6 +1,6 @@
 #include <boost/tokenizer.hpp>
 //#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>#
+#include <boost/algorithm/string.hpp>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -42,6 +42,7 @@ public:
         {
             if(line.find_first_of(',') != line.find_last_of(','))
             {
+                delete(_map);
                 throw std::exception();
             }
             tokenizer tok{line, sep};
@@ -59,6 +60,7 @@ public:
                 {
                     if(!isWholeNumber(*current))
                     {
+                        delete(_map);
                         throw std::exception();
                     }
                     weight = stoi(*current);
@@ -68,6 +70,7 @@ public:
             }
             if (counter != 2 || expression.empty() || weight < 0)
             {
+                delete(_map);
                 throw std::exception();
             }
             _map->insert(expression,weight);
@@ -103,6 +106,11 @@ public:
         }
     }
 
+    ~SpamDetector()
+    {
+        delete(_map);
+    }
+
 private:
     HashMap<std::string, int> *_map{};
 
@@ -112,7 +120,7 @@ int main(const int argc, const char **argv)
 {
     if(argc != 4)//todo including SpamDetector or not?
     {
-        std::cerr << "Usage: SpamDetector <databaseFile path> <messageFile path> <threshold>" << std::endl;
+        std::cerr << "Usage: SpamDetector <database path> <message path> <threshold>" << std::endl;
         return EXIT_FAILURE;
     }
     int threshold = 0;
@@ -159,3 +167,8 @@ int main(const int argc, const char **argv)
     messageFile.close();
     return EXIT_SUCCESS;
 }
+
+class InvalidInput: std::exception
+{
+
+};

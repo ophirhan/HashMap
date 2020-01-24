@@ -23,27 +23,123 @@ private:
     pairVector *vec;
 
     //private funcs
+    /**
+     * @brief hashes given key to index number between 0 and maxCapcity.
+     * @param key KeyT object to hash.
+     * @return number between 0 and maxCapacity.
+     */
     int hash(const KeyT &key) const;
-    void reHash(int newSize);
+
+    /**
+     * @brief Rehashes all keys in the HashMap to new HashMap of newCapacity capacity.
+     * @param newCapacity number of buckets after operation is done.
+     */
+    void reHash(int newCapacity);
 public:
+    /**
+     * @brief Default HashMap constructor.
+     */
     HashMap();
+
+    /**
+     * @brief Constructor that receives values in two separate vectors.
+     * @param keys const reference to KeyT object vector.
+     * @param values const reference to ValueT object vector.
+     */
     HashMap(const std::vector<KeyT> &keys, const std::vector<ValueT> &values);
+
+    /**
+     * @brief Copy constructor
+     * @param other HashMap to copy.
+     */
     HashMap(HashMap<KeyT, ValueT> &other);
+
+    /**
+     * @brief HashMap destructor.
+     */
     ~HashMap();
 
     //functions
+    /**
+     * @brief count getter.
+     * @return number of items in HashMap.
+     */
     int size() const;
+
+    /**
+     * maxCapacity getter.
+     * @return number of buckets in HashMap.
+     */
     int capacity() const;
+
+    /**
+     * @brief checks if the HashMap is empty.
+     * @return true if the HashMap is empty, false otherwise.
+     */
     bool empty() const;
+
+    /**
+     * @brief inserts a new value to the HashMap at a certain key location.
+     * @param key to locate value by.
+     * @param val value to input in the HashMap.
+     * @return true if insertion was successful, false otherwise.
+     */
     bool insert(const KeyT &key, const ValueT &val);
+
+    /**
+     * @brief checks if a given key is contained in the HashMap.
+     * @param key the key to search for.
+     * @return true if the HashMap contains the key, false otherwise.
+     */
     bool containsKey(const KeyT &key) const;
+
+    /**
+     * @brief Get value by key.
+     * @param key to search by.
+     * @return reference to ValueT object if HashMap contains key, throws exception otherwise.
+     */
     ValueT &at(const KeyT &key);
+
+    /**
+     * @brief Get value by key.
+     * @param key to search by.
+     * @return ValueT object if HashMap contains key, throws exception otherwise.
+     */
     ValueT at(const KeyT &key) const;
+
+    /**
+     * @brief Erases key and value from HashMap.
+     * @param key to erase.
+     * @return true if erasure was successful, false otherwise.
+     */
     bool erase(const KeyT &key);
+
+    /**
+     * @return gets current (double) load factor of the HashMap.
+     */
     double getLoadFactor() const;
+
+    /**
+     * @brief Checks how many items were hashed to a certain bucket.
+     * @param key to check size of bucket container.
+     * @return number of items in bucket containing key.
+     */
     int bucketSize(const KeyT &key) const;
+
+    /**
+     * @param key to search
+     * @return index of bucket containing the key.
+     */
     int bucketIndex(const KeyT &key) const;
+
+    /**
+     * @brief clears all items from HashMap, doesn't update size.
+     */
     void clear();
+
+    /**
+     * @brief iterator object of HashMap.
+     */
     class const_iterator
     {
     public:
@@ -57,13 +153,38 @@ public:
 
         typedef std::forward_iterator_tag iterator_category;
     private:
+        /**
+         * @brief Index of bucket containing current item.
+         */
         int bucket;
+
+        /**
+         * @brief Index of current item in it's containing bucket.
+         */
         int indexInBucket;
-        pairVector *ivec;
+
+        /**
+         * @brief Number of buckets in HashMap.
+         */
         int icapacity;
+
+        /**
+         * @brief Pointer to array of vector<KeyT, ValueT> containing items to iterate over.
+         */
+        pairVector *ivec;
+
+        /**
+         * @brief Pointer to current pair of KeyT object, ValueT object.
+         */
         pointer current;
 
     public:
+
+        /**
+         * @brief Constructor of Iterator, finding first items.
+         * @param mVec pointer to array of vectors to iterate over.
+         * @param capacity number of vectors in the array.
+         */
         const_iterator(pairVector *mVec, int capacity):
                 bucket(0), indexInBucket(0), icapacity(capacity), ivec(mVec), current(nullptr)
         {
@@ -82,16 +203,28 @@ public:
             }
         }
 
+        /**
+         * @brief * operator overload when *<const_iter_name> is called.
+         * @return dereference of current.
+         */
         reference operator*()
         {
             return *current;
         }
 
+        /**
+         * @brief -> operator overload when <const_iter_name>-> is called.
+         * @return current which is a pointer to std::pair of KeyT and ValueT objects
+         */
         pointer operator->()
         {
             return current;
         }
 
+        /**
+         * @brief ++ operator overload when ++<const_iter_name> is called.
+         * @return advances the current and indexes to the next item and returns the iterator
+         */
         const_iterator& operator++()
         {
             if(ivec == nullptr)
@@ -107,7 +240,7 @@ public:
             {
                 indexInBucket = 0;
                 bucket++;
-                while(ivec[bucket].size() == 0 && bucket < icapacity)
+                while(bucket < icapacity && ivec[bucket].size() == 0)
                 {
                     bucket++;
                 }
@@ -121,6 +254,11 @@ public:
             return *this;
         }
 
+        /**
+         * @brief ++ operator overload when <const_iter_name>++ is called.
+         * @return advances the current and indexes to the next item and returns an iterator
+         * pointing to the previous item.
+         */
         const_iterator operator++(int)
         {
             const_iterator temp = *this;
@@ -128,17 +266,28 @@ public:
             return temp;
         }
 
+        /**
+         * @brief == operator overload when <const_iter_name>==<other_const_iter_name> is called.
+         * @return true if both iterator point to the same pair.
+         */
         bool operator==(const_iterator const &other) const
         {
             return other.current == current;
         }
 
+        /**
+         * @brief != operator overload when <const_iter_name>==<other_const_iter_name> is called.
+         * @return true if both iterator point to the a different pair.
+         */
         bool operator!=(const_iterator const &other) const
         {
             return other.current != current;
         }
     };
 
+    /**
+     * @return A const iterator
+     */
     const_iterator begin() const
     {
         return const_iterator(vec, maxCapacity);
@@ -236,11 +385,11 @@ bool HashMap<KeyT, ValueT>::insert(const KeyT &key,const ValueT &val)
 }
 
 template<class KeyT, class ValueT>
-void HashMap<KeyT, ValueT>::reHash(int newSize)
+void HashMap<KeyT, ValueT>::reHash(int newCapacity)
 {
-    auto newVec = new pairVector[newSize];
+    auto newVec = new pairVector[newCapacity];
     int oldCapacity = maxCapacity;
-    maxCapacity  = newSize ;
+    maxCapacity  = newCapacity ;
     for (int i = 0; i < oldCapacity; ++i)
     {
         for(auto &pair: vec[i])
