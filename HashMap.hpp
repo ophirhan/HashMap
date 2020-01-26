@@ -12,6 +12,13 @@
 
 #define LOWER_LOAD_FACTOR 0.25
 
+#define KEY_DOES_NOT_EXIST "The hashMap doesn't contain this key"
+
+/**
+ * @brief open HashMap holds ValueT object according to KeyT objects.
+ * @tparam KeyT Objects to search ValueT by.
+ * @tparam ValueT Object to hold.
+ */
 template<class KeyT, class ValueT>
 class HashMap
 {
@@ -28,13 +35,14 @@ private:
      * @param key KeyT object to hash.
      * @return number between 0 and maxCapacity.
      */
-    int hash(const KeyT &key) const;
+    int _hash(const KeyT &key) const;
 
     /**
      * @brief Rehashes all keys in the HashMap to new HashMap of newCapacity capacity.
      * @param newCapacity number of buckets after operation is done.
      */
-    void reHash(int newCapacity);
+    void _reHash(int newCapacity);
+
 public:
     /**
      * @brief Default HashMap constructor.
@@ -145,7 +153,7 @@ public:
     public:
         typedef int difference_type;
 
-        typedef std::pair<KeyT, ValueT>  value_type;
+        typedef std::pair<KeyT, ValueT> value_type;
 
         typedef std::pair<KeyT, ValueT> *pointer;
 
@@ -185,16 +193,16 @@ public:
          * @param mVec pointer to array of vectors to iterate over.
          * @param capacity number of vectors in the array.
          */
-        const_iterator(pairVector *mVec, int capacity):
+        const_iterator(pairVector *mVec, int capacity) :
                 bucket(0), indexInBucket(0), icapacity(capacity), ivec(mVec), current(nullptr)
         {
-            if(mVec == nullptr)
+            if (mVec == nullptr)
             {
                 return;
             }
             for (int i = 0; i < capacity; ++i)
             {
-                if(ivec[i].size() != 0)
+                if (ivec[i].size() != 0)
                 {
                     bucket = i;
                     current = &(ivec[i][0]);
@@ -226,14 +234,14 @@ public:
          * @return advances the current and indexes to the next item and returns the iterator,
          * when last is reached points to nullptr.
          */
-        const_iterator& operator++()
+        const_iterator &operator++()
         {
-            if(ivec == nullptr)
+            if (ivec == nullptr)
             {
                 current = nullptr;
-                return *this; //todo yair?
+                return *this;
             }
-            if(indexInBucket + 1 < (int)ivec[bucket].size())
+            if (indexInBucket + 1 < (int) ivec[bucket].size())
             {
                 indexInBucket++;
             }
@@ -241,14 +249,14 @@ public:
             {
                 indexInBucket = 0;
                 bucket++;
-                while(bucket < icapacity && ivec[bucket].size() == 0)
+                while (bucket < icapacity && ivec[bucket].size() == 0)
                 {
                     bucket++;
                 }
-                if(bucket == icapacity)
+                if (bucket == icapacity)
                 {
                     current = nullptr;
-                    return*this;
+                    return *this;
                 }
             }
             current = &(ivec[bucket][indexInBucket]);
@@ -364,7 +372,8 @@ HashMap<KeyT, ValueT>::HashMap():
         maxCapacity(DEFAULT_CAPACITY),
         count(0),
         vec(new pairVector[DEFAULT_CAPACITY])
-{}
+{
+}
 
 /**
  * @brief Constructor that receives values in two separate vectors.
@@ -372,18 +381,17 @@ HashMap<KeyT, ValueT>::HashMap():
  * @param values const reference to ValueT object vector.
  */
 template<class KeyT, class ValueT>
-HashMap<KeyT, ValueT>::HashMap(const std::vector<KeyT> &keys,const std::vector<ValueT> &values):
+HashMap<KeyT, ValueT>::HashMap(const std::vector<KeyT> &keys, const std::vector<ValueT> &values):
         maxCapacity(DEFAULT_CAPACITY),
         count(0)
 {
-    if(keys.size() != values.size())
+    if (keys.size() != values.size())
     {
-        throw std::exception();//todo error;
+        throw std::runtime_error("Vector lengths aren't equal");
     }
     vec = new pairVector[maxCapacity];
-    for(int i = 0; i < keys.size(); i++)
+    for (size_t i = 0; i < keys.size(); i++)
     {
-//        insert(keys[i], values[i]);
         (*this)[keys[i]] = values[i];
     }
 }
@@ -396,9 +404,9 @@ template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT>::HashMap(HashMap<KeyT, ValueT> &other):
         maxCapacity(other.maxCapacity), count(other.count), vec(new pairVector[maxCapacity])
 {
-    for(int i = 0; i < maxCapacity; i++)
+    for (int i = 0; i < maxCapacity; i++)
     {
-        vec[i] = other.vec[i]; //todo use operator=?
+        vec[i] = other.vec[i];
     }
 }
 
@@ -409,10 +417,10 @@ HashMap<KeyT, ValueT>::HashMap(HashMap<KeyT, ValueT> &other):
  * @return number between 0 and maxCapacity.
  */
 template<class KeyT, class ValueT>
-int HashMap<KeyT, ValueT>::hash(const KeyT &key) const
+int HashMap<KeyT, ValueT>::_hash(const KeyT &key) const
 {
     int hash = std::hash<KeyT>()(key);
-    return hash&(maxCapacity - 1);
+    return hash & (maxCapacity - 1);
 }
 
 /**
@@ -421,7 +429,6 @@ int HashMap<KeyT, ValueT>::hash(const KeyT &key) const
 template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT>::~HashMap()
 {
-    // todo clear?
     delete[] vec;
 }
 
@@ -433,18 +440,18 @@ HashMap<KeyT, ValueT>::~HashMap()
  * @return true if insertion was successful, false otherwise.
  */
 template<class KeyT, class ValueT>
-bool HashMap<KeyT, ValueT>::insert(const KeyT &key,const ValueT &val)
+bool HashMap<KeyT, ValueT>::insert(const KeyT &key, const ValueT &val)
 {
-    if(containsKey(key))
+    if (containsKey(key))
     {
         return false;
     }
-    int place = hash(key);
+    int place = _hash(key);
     count++;
     vec[place].push_back(std::make_pair(key, val));
-    if(getLoadFactor() > UPPER_LOAD_FACTOR)
+    if (getLoadFactor() > UPPER_LOAD_FACTOR)
     {
-        reHash(maxCapacity*2);
+        _reHash(maxCapacity * 2);
     }
     return true;
 }
@@ -454,19 +461,18 @@ bool HashMap<KeyT, ValueT>::insert(const KeyT &key,const ValueT &val)
  * @param newCapacity number of buckets after operation is done.
  */
 template<class KeyT, class ValueT>
-void HashMap<KeyT, ValueT>::reHash(int newCapacity)
+void HashMap<KeyT, ValueT>::_reHash(int newCapacity)
 {
     auto newVec = new pairVector[newCapacity];
     int oldCapacity = maxCapacity;
-    maxCapacity  = newCapacity ;
+    maxCapacity = newCapacity;
     for (int i = 0; i < oldCapacity; ++i)
     {
-        for(auto &pair: vec[i])
+        for (auto &pair: vec[i])
         {
-            newVec[hash(pair.first)].push_back(pair);
+            newVec[_hash(pair.first)].push_back(pair);
         }
     }
-    // todo clear?
     delete[] vec;
     vec = newVec;
 }
@@ -509,8 +515,8 @@ bool HashMap<KeyT, ValueT>::empty() const
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::containsKey(const KeyT &key) const
 {
-    int place = hash(key);
-    for(auto &pair: vec[place])
+    int place = _hash(key);
+    for (auto &pair: vec[place])
     {
         if (pair.first == key)
         {
@@ -528,15 +534,15 @@ bool HashMap<KeyT, ValueT>::containsKey(const KeyT &key) const
 template<class KeyT, class ValueT>
 ValueT &HashMap<KeyT, ValueT>::at(const KeyT &key)
 {
-    int place = hash(key);
-    for(auto &i: vec[place])
+    int place = _hash(key);
+    for (auto &i: vec[place])
     {
-        if(i.first == key)
+        if (i.first == key)
         {
             return i.second;
         }
     }
-    throw std::exception();//todo exception
+    throw std::out_of_range(KEY_DOES_NOT_EXIST);
 }
 
 /**
@@ -547,15 +553,15 @@ ValueT &HashMap<KeyT, ValueT>::at(const KeyT &key)
 template<class KeyT, class ValueT>
 ValueT HashMap<KeyT, ValueT>::at(const KeyT &key) const
 {
-    int place = hash(key);
-    for(auto &i: vec[place])
+    int place = _hash(key);
+    for (auto &i: vec[place])
     {
-        if(i.first == key)
+        if (i.first == key)
         {
             return i.second;
         }
     }
-    throw std::exception();//todo exception
+    throw std::out_of_range(KEY_DOES_NOT_EXIST);
 }
 
 /**
@@ -566,16 +572,16 @@ ValueT HashMap<KeyT, ValueT>::at(const KeyT &key) const
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::erase(const KeyT &key)
 {
-    int index = hash(key);
-    for(auto iter=vec[index].begin();iter != vec[index].end() ; iter++)
+    int index = _hash(key);
+    for (auto iter = vec[index].begin(); iter != vec[index].end(); iter++)
     {
-        if(iter->first == key)
+        if (iter->first == key)
         {
             vec[index].erase(iter);
             count--;
-            while(capacity() > 1 && getLoadFactor() < LOWER_LOAD_FACTOR)
+            while (capacity() > 1 && getLoadFactor() < LOWER_LOAD_FACTOR)
             {
-                reHash(maxCapacity/2);
+                _reHash(maxCapacity / 2);
             }
             return true;
         }
@@ -589,7 +595,7 @@ bool HashMap<KeyT, ValueT>::erase(const KeyT &key)
 template<class KeyT, class ValueT>
 double HashMap<KeyT, ValueT>::getLoadFactor() const
 {
-    return (double) size()/capacity();
+    return (double) size() / capacity();
 }
 
 /**
@@ -600,11 +606,11 @@ double HashMap<KeyT, ValueT>::getLoadFactor() const
 template<class KeyT, class ValueT>
 int HashMap<KeyT, ValueT>::bucketSize(const KeyT &key) const
 {
-    if(!containsKey(key))
+    if (!containsKey(key))
     {
-        throw std::exception();//TODO ERROR
+        throw std::out_of_range(KEY_DOES_NOT_EXIST);
     }
-    return (int) vec[hash(key)].size();
+    return (int) vec[_hash(key)].size();
 }
 
 /**
@@ -614,11 +620,11 @@ int HashMap<KeyT, ValueT>::bucketSize(const KeyT &key) const
 template<class KeyT, class ValueT>
 int HashMap<KeyT, ValueT>::bucketIndex(const KeyT &key) const
 {
-    if(!containsKey(key))
+    if (!containsKey(key))
     {
-        throw std::exception();//TODO ERROR
+        throw std::out_of_range(KEY_DOES_NOT_EXIST);
     }
-    return hash(key);
+    return _hash(key);
 }
 
 /**
@@ -642,14 +648,13 @@ void HashMap<KeyT, ValueT>::clear()
 template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT> &HashMap<KeyT, ValueT>::operator=(const HashMap<KeyT, ValueT> &other)
 {
-    if(other == *this)
+    if (other == *this)
     {
         return *this;
     }
-    //todo clear?
-    delete [] vec;
+    delete[] vec;
     vec = new pairVector[other.capacity()];
-    for(int i=0; i < other.capacity(); i++)
+    for (int i = 0; i < other.capacity(); i++)
     {
         vec[i] = other.vec[i];
     }
@@ -666,15 +671,17 @@ HashMap<KeyT, ValueT> &HashMap<KeyT, ValueT>::operator=(const HashMap<KeyT, Valu
 template<class KeyT, class ValueT>
 ValueT &HashMap<KeyT, ValueT>::operator[](const KeyT &key)
 {
-    try{
+    try
+    {
         return at(key);
     }
-    catch (std::exception &e)
+    catch (std::out_of_range &e)
     {
         insert(key, ValueT());
         return at(key);
     }
 }
+
 /**
  * @brief [] operator overload when const <HashMap_name>[KeyT key] is called.
  * @return Reference to the ValueT item in the key place if it exists,
@@ -683,10 +690,11 @@ ValueT &HashMap<KeyT, ValueT>::operator[](const KeyT &key)
 template<class KeyT, class ValueT>
 ValueT HashMap<KeyT, ValueT>::operator[](const KeyT &key) const
 {
-    try{
+    try
+    {
         return at(key);
     }
-    catch (std::exception &e)
+    catch (std::out_of_range &e)
     {
         return ValueT();
     }
@@ -700,15 +708,15 @@ ValueT HashMap<KeyT, ValueT>::operator[](const KeyT &key) const
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::operator==(const HashMap<KeyT, ValueT> &other) const
 {
-    if(size() != other.size())
+    if (size() != other.size())
     {
         return false;
     }
-    for(auto &pair: other)
+    for (auto &pair: other)
     {
-        if(containsKey(pair.first))
+        if (containsKey(pair.first))
         {
-            if(at(pair.first) != pair.second)
+            if (at(pair.first) != pair.second)
             {
                 return false;
             }
@@ -731,7 +739,6 @@ bool HashMap<KeyT, ValueT>::operator!=(const HashMap<KeyT, ValueT> &other) const
 {
     return !(other == *this);
 }
-
 
 
 #endif //CPP_EX3_HASHMAP_HPP

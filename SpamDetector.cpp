@@ -1,12 +1,32 @@
 #include <boost/tokenizer.hpp>
-//#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include "HashMap.hpp"
 
 #define INVALID_INPUT "Invalid input"
+
+#define EXPECTED_NUM_OF_ARGS 4
+
+#define THRESHOLD_ARG_NUM 3
+
+#define DATABASE_ARG_NUM 1
+
+#define MESSAGE_ARG_NUM 2
+
+#define EXACTLY_TWO_COLS "Only exactly two columns allowed"
+
+/**
+ * @brief Turns all letter in a string to lowercase, in place.
+ * @param str the string to change.
+ */
+void toLowerCase(std::string &str)
+{
+    for (char &c : str)
+    {
+        c = (char) tolower(c);
+    }
+}
 
 /**
  * @brief Checks if a given string represents a none-negative integer.
@@ -15,17 +35,17 @@
  */
 bool isNoneNegativeInteger(const std::string &basicString)
 {
-    if(basicString.length()==0)
+    if (basicString.length() == 0)
     {
         return false;
     }
-    if(basicString.length() > 1 && basicString[0] == '0')
+    if (basicString.length() > 1 && basicString[0] == '0')
     {
         return false;
     }
-    for(char c:basicString)
+    for (char c:basicString)
     {
-        if(!isdigit(c))
+        if (!isdigit(c))
         {
             return false;
         }
@@ -51,12 +71,12 @@ public:
         _map = new HashMap<std::string, int>();
         boost::char_separator<char> sep{","};
         std::string line;
-        while(std::getline(database, line))
+        while (std::getline(database, line))
         {
-            if(line.find_first_of(',') != line.find_last_of(','))
+            if (line.find_first_of(',') != line.find_last_of(','))
             {
-                delete(_map);
-                throw std::exception();
+                delete (_map);
+                throw std::invalid_argument(EXACTLY_TWO_COLS);
             }
             tokenizer tok{line, sep};
             int counter = 0, weight = 0;
@@ -64,29 +84,39 @@ public:
             auto current = tok.begin();
             while (current != tok.end())
             {
-                if(counter == 0)
+                counter++;
+                if (counter == 1)
                 {
                     expression = *current;
-                    boost::algorithm::to_lower(expression);
-                }
-                else
-                {
-                    if(!isWholeNumber(*current))
+                    toLowerCase(expression);
+                    if (expression.empty())
                     {
-                        delete(_map);
-                        throw std::exception();
+                        delete (_map);
+                        throw std::invalid_argument("Expression must not be empty");
+                    }
+                }
+                else if (counter == 2)
+                {
+                    if (!isNoneNegativeInteger(*current))
+                    {
+                        delete (_map);
+                        throw std::invalid_argument(
+                                "Only none negative integers allowed as weights");
                     }
                     weight = stoi(*current);
                 }
+                else
+                {
+                    break;
+                }
                 ++current;
-                counter++;
             }
-            if (counter != 2 || expression.empty() || weight < 0)
+            if (counter != 2)
             {
-                delete(_map);
-                throw std::exception();
+                delete (_map);
+                throw std::invalid_argument(EXACTLY_TWO_COLS);
             }
-            _map->insert(expression,weight);
+            _map->insert(expression, weight);
         }
     }
 
@@ -102,21 +132,22 @@ public:
         int score = 0;
         std::string message;
         std::string line;
-        while(std::getline(messageFile, line))
+        while (std::getline(messageFile, line))
         {
             message += line + "\n";
         }
-        boost::algorithm::to_lower(message);
-        for(const auto &i: *_map)
+
+        toLowerCase(message);
+        for (const auto &i: *_map)
         {
             size_t index = message.find(i.first);
-            while(index != std::string::npos)
+            while (index != std::string::npos)
             {
                 score += i.second;
                 index = message.find(i.first, index + 1);
             }
         }
-        if(score >= threshold)
+        if (score >= threshold)
         {
             std::cout << "SPAM" << std::endl;
         }
@@ -131,13 +162,11 @@ public:
      */
     ~SpamDetector()
     {
-        delete(_map);
+        delete (_map);
     }
 
 private:
     HashMap<std::string, int> *_map{};
-
-
 };
 
 /**
@@ -150,7 +179,7 @@ private:
  */
 int main(const int argc, const char **argv)
 {
-    if(argc != 4)//todo including SpamDetector or not?
+    if (argc != EXPECTED_NUM_OF_ARGS)//todo including SpamDetector or not?
     {
         std::cerr << "Usage: SpamDetector <database path> <message path> <threshold>" << std::endl;
         return EXIT_FAILURE;
@@ -158,25 +187,25 @@ int main(const int argc, const char **argv)
     int threshold = 0;
     try
     {
-        threshold = std::stoi(argv[3]);
+        threshold = std::stoi(argv[THRESHOLD_ARG_NUM]);
     }
-    catch(std::exception &e)
+    catch (std::invalid_argument &e)
     {
         std::cerr << INVALID_INPUT << std::endl;
         return EXIT_FAILURE;
     }
-    if (threshold < 1 || !isWholeNumber(argv[3]))
+    if (threshold < 1 || !isNoneNegativeInteger(argv[THRESHOLD_ARG_NUM]))
     {
         std::cerr << INVALID_INPUT << std::endl;
         return EXIT_FAILURE;
     }
-    std::ifstream databaseFile(argv[1]);
+    std::ifstream databaseFile(argv[DATABASE_ARG_NUM]);
     if (!databaseFile.is_open()) // File doesn't exist
     {
         std::cerr << INVALID_INPUT << std::endl;
         return EXIT_FAILURE;
     }
-    std::ifstream messageFile(argv[2]);
+    std::ifstream messageFile(argv[MESSAGE_ARG_NUM]);
     if (!messageFile.is_open()) // File doesn't exist
     {
         databaseFile.close();
@@ -188,7 +217,7 @@ int main(const int argc, const char **argv)
         SpamDetector detector(databaseFile);
         detector.detect(messageFile, threshold);
     }
-    catch (std::exception &e)
+    catch (std::invalid_argument &e)
     {
         databaseFile.close();
         messageFile.close();
@@ -199,11 +228,3 @@ int main(const int argc, const char **argv)
     messageFile.close();
     return EXIT_SUCCESS;
 }
-
-/**
- * @brief Exception for SpamDetector project.
- */
-class SpamDetectorException: std::exception
-{
-
-};
