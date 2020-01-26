@@ -223,7 +223,8 @@ public:
 
         /**
          * @brief ++ operator overload when ++<const_iter_name> is called.
-         * @return advances the current and indexes to the next item and returns the iterator
+         * @return advances the current and indexes to the next item and returns the iterator,
+         * when last is reached points to nullptr.
          */
         const_iterator& operator++()
         {
@@ -286,35 +287,78 @@ public:
     };
 
     /**
-     * @return A const iterator
+     * @return A const iterator pointing to the first item in the HashMap.
      */
     const_iterator begin() const
     {
         return const_iterator(vec, maxCapacity);
     }
 
+    /**
+     * @return A const iterator pointing to nullptr.
+     */
     const_iterator end() const
     {
         return const_iterator(nullptr, 0);
     }
 
+    /**
+     * @return A const iterator pointing to the first item in the HashMap.
+     */
     const_iterator cbegin() const
     {
         return const_iterator(vec, maxCapacity);
     }
 
+    /**
+     * @return A const iterator pointing to nullptr.
+     */
     const_iterator cend() const
     {
         return const_iterator(nullptr, 0);
     }
 
     //operators
+
+    /**
+     * @brief = operator overload when <HashMap_name>=<other_HashMap_name> is called,
+     * Copies data from other HashMap to this HashMap.
+     * @return Reference to current HashMap
+     */
     HashMap<KeyT, ValueT> &operator=(const HashMap<KeyT, ValueT> &other);
+
+    /**
+     * @brief [] operator overload when <HashMap_name>[KeyT key] is called.
+     * @return Reference to the ValueT item in the key place if it exists,
+     * otherwise inserts default ValueT value and returns reference to it.
+     */
     ValueT &operator[](const KeyT &key);
+
+    /**
+     * @brief [] operator overload when const <HashMap_name>[KeyT key] is called.
+     * @return Reference to the ValueT item in the key place if it exists,
+     * otherwise returns a reference to default ValueT.
+     */
     ValueT operator[](const KeyT &key) const;
+
+    /**
+     * @brief == operator overload when const <HashMap_name>==<other_HashMap_name> is called.
+     * @return true if the group of keyT, ValueT pairs in current is
+     * equal to the group of other HashMap, false otherwise.
+     */
     bool operator==(const HashMap<KeyT, ValueT> &other) const;
+
+    /**
+     * @brief != operator overload when const <HashMap_name>!=<other_HashMap_name> is called.
+     * @return true if the group of keyT, ValueT pairs in current is
+     * unequal to the group of other HashMap, false otherwise.
+     */
     bool operator!=(const HashMap<KeyT, ValueT> &other) const;
 };
+
+/**
+ * @brief Default HashMap constructor.
+ */
 template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT>::HashMap():
         maxCapacity(DEFAULT_CAPACITY),
@@ -322,7 +366,11 @@ HashMap<KeyT, ValueT>::HashMap():
         vec(new pairVector[DEFAULT_CAPACITY])
 {}
 
-
+/**
+ * @brief Constructor that receives values in two separate vectors.
+ * @param keys const reference to KeyT object vector.
+ * @param values const reference to ValueT object vector.
+ */
 template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT>::HashMap(const std::vector<KeyT> &keys,const std::vector<ValueT> &values):
         maxCapacity(DEFAULT_CAPACITY),
@@ -342,6 +390,7 @@ HashMap<KeyT, ValueT>::HashMap(const std::vector<KeyT> &keys,const std::vector<V
 
 /**
  * @brief Copy constructor
+ * @param other HashMap to copy.
  */
 template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT>::HashMap(HashMap<KeyT, ValueT> &other):
@@ -353,6 +402,12 @@ HashMap<KeyT, ValueT>::HashMap(HashMap<KeyT, ValueT> &other):
     }
 }
 
+//private funcs
+/**
+ * @brief hashes given key to index number between 0 and maxCapcity.
+ * @param key KeyT object to hash.
+ * @return number between 0 and maxCapacity.
+ */
 template<class KeyT, class ValueT>
 int HashMap<KeyT, ValueT>::hash(const KeyT &key) const
 {
@@ -360,6 +415,9 @@ int HashMap<KeyT, ValueT>::hash(const KeyT &key) const
     return hash&(maxCapacity - 1);
 }
 
+/**
+ * @brief HashMap destructor.
+ */
 template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT>::~HashMap()
 {
@@ -367,6 +425,13 @@ HashMap<KeyT, ValueT>::~HashMap()
     delete[] vec;
 }
 
+
+/**
+ * @brief inserts a new value to the HashMap at a certain key location.
+ * @param key to locate value by.
+ * @param val value to input in the HashMap.
+ * @return true if insertion was successful, false otherwise.
+ */
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::insert(const KeyT &key,const ValueT &val)
 {
@@ -384,6 +449,10 @@ bool HashMap<KeyT, ValueT>::insert(const KeyT &key,const ValueT &val)
     return true;
 }
 
+/**
+ * @brief Rehashes all keys in the HashMap to new HashMap of newCapacity capacity.
+ * @param newCapacity number of buckets after operation is done.
+ */
 template<class KeyT, class ValueT>
 void HashMap<KeyT, ValueT>::reHash(int newCapacity)
 {
@@ -402,24 +471,41 @@ void HashMap<KeyT, ValueT>::reHash(int newCapacity)
     vec = newVec;
 }
 
+/**
+ * @brief count getter.
+ * @return number of items in HashMap.
+ */
 template<class KeyT, class ValueT>
 int HashMap<KeyT, ValueT>::size() const
 {
     return count;
 }
 
+/**
+ * maxCapacity getter.
+ * @return number of buckets in HashMap.
+ */
 template<class KeyT, class ValueT>
 int HashMap<KeyT, ValueT>::capacity() const
 {
     return maxCapacity;
 }
 
+/**
+ * @brief checks if the HashMap is empty.
+ * @return true if the HashMap is empty, false otherwise.
+ */
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::empty() const
 {
     return count == 0;
 }
 
+/**
+ * @brief checks if a given key is contained in the HashMap.
+ * @param key the key to search for.
+ * @return true if the HashMap contains the key, false otherwise.
+ */
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::containsKey(const KeyT &key) const
 {
@@ -434,6 +520,11 @@ bool HashMap<KeyT, ValueT>::containsKey(const KeyT &key) const
     return false;
 }
 
+/**
+ * @brief Get value by key.
+ * @param key to search by.
+ * @return reference to ValueT object if HashMap contains key, throws exception otherwise.
+ */
 template<class KeyT, class ValueT>
 ValueT &HashMap<KeyT, ValueT>::at(const KeyT &key)
 {
@@ -448,7 +539,11 @@ ValueT &HashMap<KeyT, ValueT>::at(const KeyT &key)
     throw std::exception();//todo exception
 }
 
-
+/**
+ * @brief Get value by key.
+ * @param key to search by.
+ * @return ValueT object if HashMap contains key, throws exception otherwise.
+ */
 template<class KeyT, class ValueT>
 ValueT HashMap<KeyT, ValueT>::at(const KeyT &key) const
 {
@@ -463,6 +558,11 @@ ValueT HashMap<KeyT, ValueT>::at(const KeyT &key) const
     throw std::exception();//todo exception
 }
 
+/**
+ * @brief Erases key and value from HashMap.
+ * @param key to erase.
+ * @return true if erasure was successful, false otherwise.
+ */
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::erase(const KeyT &key)
 {
@@ -483,12 +583,20 @@ bool HashMap<KeyT, ValueT>::erase(const KeyT &key)
     return false;
 }
 
+/**
+ * @return gets current (double) load factor of the HashMap.
+ */
 template<class KeyT, class ValueT>
 double HashMap<KeyT, ValueT>::getLoadFactor() const
 {
     return (double) size()/capacity();
 }
 
+/**
+ * @brief Checks how many items were hashed to a certain bucket.
+ * @param key to check size of bucket container.
+ * @return number of items in bucket containing key.
+ */
 template<class KeyT, class ValueT>
 int HashMap<KeyT, ValueT>::bucketSize(const KeyT &key) const
 {
@@ -499,6 +607,10 @@ int HashMap<KeyT, ValueT>::bucketSize(const KeyT &key) const
     return (int) vec[hash(key)].size();
 }
 
+/**
+ * @param key to search
+ * @return index of bucket containing the key.
+ */
 template<class KeyT, class ValueT>
 int HashMap<KeyT, ValueT>::bucketIndex(const KeyT &key) const
 {
@@ -509,6 +621,9 @@ int HashMap<KeyT, ValueT>::bucketIndex(const KeyT &key) const
     return hash(key);
 }
 
+/**
+ * @brief clears all items from HashMap, doesn't update size.
+ */
 template<class KeyT, class ValueT>
 void HashMap<KeyT, ValueT>::clear()
 {
@@ -519,6 +634,11 @@ void HashMap<KeyT, ValueT>::clear()
     count = 0;
 }
 
+/**
+ * @brief = operator overload when <HashMap_name>=<other_HashMap_name> is called,
+ * Copies data from other HashMap to this HashMap.
+ * @return Reference to current HashMap
+ */
 template<class KeyT, class ValueT>
 HashMap<KeyT, ValueT> &HashMap<KeyT, ValueT>::operator=(const HashMap<KeyT, ValueT> &other)
 {
@@ -538,6 +658,11 @@ HashMap<KeyT, ValueT> &HashMap<KeyT, ValueT>::operator=(const HashMap<KeyT, Valu
     return *this;
 }
 
+/**
+ * @brief [] operator overload when <HashMap_name>[KeyT key] is called.
+ * @return Reference to the ValueT item in the key place if it exists,
+ * otherwise inserts default ValueT value and returns reference to it.
+ */
 template<class KeyT, class ValueT>
 ValueT &HashMap<KeyT, ValueT>::operator[](const KeyT &key)
 {
@@ -550,7 +675,11 @@ ValueT &HashMap<KeyT, ValueT>::operator[](const KeyT &key)
         return at(key);
     }
 }
-
+/**
+ * @brief [] operator overload when const <HashMap_name>[KeyT key] is called.
+ * @return Reference to the ValueT item in the key place if it exists,
+ * otherwise returns a reference to default ValueT.
+ */
 template<class KeyT, class ValueT>
 ValueT HashMap<KeyT, ValueT>::operator[](const KeyT &key) const
 {
@@ -563,6 +692,11 @@ ValueT HashMap<KeyT, ValueT>::operator[](const KeyT &key) const
     }
 }
 
+/**
+ * @brief == operator overload when const <HashMap_name>==<other_HashMap_name> is called.
+ * @return true if the group of keyT, ValueT pairs in current is
+ * equal to the group of other HashMap, false otherwise.
+ */
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::operator==(const HashMap<KeyT, ValueT> &other) const
 {
@@ -587,6 +721,11 @@ bool HashMap<KeyT, ValueT>::operator==(const HashMap<KeyT, ValueT> &other) const
     return true;
 }
 
+/**
+ * @brief != operator overload when const <HashMap_name>!=<other_HashMap_name> is called.
+ * @return true if the group of keyT, ValueT pairs in current is
+ * unequal to the group of other HashMap, false otherwise.
+ */
 template<class KeyT, class ValueT>
 bool HashMap<KeyT, ValueT>::operator!=(const HashMap<KeyT, ValueT> &other) const
 {

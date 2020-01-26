@@ -8,8 +8,12 @@
 
 #define INVALID_INPUT "Invalid input"
 
-
-bool isWholeNumber(const std::string &basicString)
+/**
+ * @brief Checks if a given string represents a none-negative integer.
+ * @param basicString string to check.
+ * @return true if the string is a none-negative integer, false otherwies.
+ */
+bool isNoneNegativeInteger(const std::string &basicString)
 {
     if(basicString.length()==0)
     {
@@ -29,10 +33,19 @@ bool isWholeNumber(const std::string &basicString)
     return true;
 }
 
+/**
+ * @brief SpamDetector object for SpamDetector project.
+ */
 class SpamDetector
 {
     typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
 public:
+
+    /**
+     * @brief SpamDetector constructor.
+     * @param database input fileStream where each line contains
+     * a spam expression and its weight separated by a comma
+     */
     explicit SpamDetector(std::ifstream &database)
     {
         _map = new HashMap<std::string, int>();
@@ -77,6 +90,13 @@ public:
         }
     }
 
+    /**
+     * @brief checks if a given message is considered as spam
+     * according to the object database and a given threshold.
+     * prints SPAM if it is, prints NOT_SPAM otherwise.
+     * @param messageFile inputFileStream to check if it is spam.
+     * @param threshold positive number indicating minimum value to be considered as spam.
+     */
     void detect(std::ifstream &messageFile, int threshold)
     {
         int score = 0;
@@ -106,6 +126,9 @@ public:
         }
     }
 
+    /**
+     * @brief SpamDetector destructor.
+     */
     ~SpamDetector()
     {
         delete(_map);
@@ -116,6 +139,15 @@ private:
 
 
 };
+
+/**
+ * @brief Main function of SpamDetector object for SpamDetector project.
+ * parses database filename, message filename and a threshold value and prints to the screen
+ * a message indicating if the given message was spam or not.
+ * @param argc number of given arguments.
+ * @param argv array of arguments.
+ * @return EXIT_SUCCESS if input was valid, EXIT_FAILURE otherwise.
+ */
 int main(const int argc, const char **argv)
 {
     if(argc != 4)//todo including SpamDetector or not?
@@ -168,7 +200,10 @@ int main(const int argc, const char **argv)
     return EXIT_SUCCESS;
 }
 
-class InvalidInput: std::exception
+/**
+ * @brief Exception for SpamDetector project.
+ */
+class SpamDetectorException: std::exception
 {
 
 };
